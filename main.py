@@ -1,19 +1,30 @@
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
-import os 
-import io
-import warnings
 from PIL import Image
 from dotenv import load_dotenv
 from stability_sdk import client
+from fastapi.middleware.cors import CORSMiddleware
+import os 
+import io
+import warnings
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
+
+app = FastAPI()
 
 load_dotenv(verbose=True)
 
 os.environ['STABILITY_HOST'] = 'grpc.stability.ai:443'
 os.environ['STABILITY_KEY'] = os.getenv('STABILITY_KEY')
 
-app = FastAPI()
+
+#CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], #모든 Origin 허용
+    allow_credentials=True, #인증정보 허용
+    allow_methods=["*"], #HTTP Method 허용
+    allow_headers=["*"], #HTTP Header허용
+)
 
 stability_api = client.StabilityInference(
     key=os.environ['STABILITY_KEY'], # API Key reference.
@@ -28,7 +39,7 @@ def root_main():
 @app.get("/api/diaries/picture/{prompt}")
 def make_picture(prompt:str):
     answers = stability_api.generate(
-    prompt="expansive landscape rolling greens with blue daisies and weeping willow trees under a blue alien sky, artstation, masterful, ghibli",
+    prompt=prompt,
     seed=992446758, 
     steps=30,
     cfg_scale=8.0,      
@@ -50,4 +61,6 @@ def make_picture(prompt:str):
                 filename = str(artifact.seed) + ".png"
 
     #return {"prompt":prompt, "filename":filename}
+    
     return FileResponse(filename)
+    #return {"image_url": "http://127.0.0.1:8080/image.jpg"}
