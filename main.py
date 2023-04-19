@@ -4,14 +4,18 @@ from PIL import Image
 from dotenv import load_dotenv
 from stability_sdk import client
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import os 
 import io
+import openai
 import warnings
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
 
 app = FastAPI()
 
 load_dotenv(verbose=True)
+
+openai.api_key= os.getenv('OPENAPI_KEY')
 
 os.environ['STABILITY_HOST'] = 'grpc.stability.ai:443'
 os.environ['STABILITY_KEY'] = os.getenv('STABILITY_KEY')
@@ -32,9 +36,22 @@ stability_api = client.StabilityInference(
     engine="stable-diffusion-xl-beta-v2-2-2",
     )
 
+class Diary(BaseModel):
+    content: str
+
 @app.get("/")
 def root_main():
     return {"message": "Picaboo AI Server"}
+
+@app.get('/api/diaries/emotion')
+def summarize_diary(diary: Diary):
+    response = openai.Completion.create(
+        model="text-davinci-002",
+        prompt=f"summary: {diary.content}",
+        max_tokens=50,
+    )
+    summary = response.choices[0].text.strip()
+    return {'summary': summary}
 
 @app.get("/api/diaries/picture/{prompt}")
 def make_picture(prompt:str):
@@ -60,7 +77,7 @@ def make_picture(prompt:str):
                 img.save(str(artifact.seed)+ ".png") 
                 filename = str(artifact.seed) + ".png"
 
-    #return {"prompt":prompt, "filename":filename}
-    
+            #imageUrl = f'http://picaboonftimage.s3.ap-northeast-2.amazonaws.com/{filename}'
     return FileResponse(filename)
-    #return {"image_url": "http://127.0.0.1:8080/image.jpg"}
+    # return imageUrl
+
