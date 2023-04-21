@@ -76,7 +76,10 @@ def make_picture(prompt:str):
                 img = Image.open(io.BytesIO(artifact.binary))
                 img.save(str(artifact.seed)+ ".png") 
                 filename = str(artifact.seed) + ".png"
-
+                #filename = str(uuid.uuid4()) + ".png"
+                #img.save(filename)
+                
+                
             #imageUrl = f'http://picaboonftimage.s3.ap-northeast-2.amazonaws.com/{filename}'
     return FileResponse(filename)
     # return imageUrl
