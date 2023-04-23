@@ -8,6 +8,8 @@ from pydantic import BaseModel
 import os 
 import io
 import openai
+import psycopg2
+import uuid
 import warnings
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
 
@@ -20,6 +22,20 @@ openai.api_key= os.getenv('OPENAPI_KEY')
 os.environ['STABILITY_HOST'] = 'grpc.stability.ai:443'
 os.environ['STABILITY_KEY'] = os.getenv('STABILITY_KEY')
 
+#DB 나중에 다 파일분리
+DB_USERNAME = os.getenv('DB_USERNAME')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
+DB_NAME = os.getenv('DB_NAME')
+DB_HOST = os.getenv('DB_HOST')
+DB_PORT = os.getenv('DB_PORT')
+
+conn = psycopg2.connect(
+    dbname= DB_NAME,
+    user=DB_USERNAME,
+    password=DB_PASSWORD,
+    host=DB_HOST,
+    port=DB_PORT
+)
 
 #CORS
 app.add_middleware(
@@ -43,15 +59,24 @@ class Diary(BaseModel):
 def root_main():
     return {"message": "Picaboo AI Server"}
 
-@app.get('/api/diaries/emotion')
-def summarize_diary(diary: Diary):
-    response = openai.Completion.create(
+@app.get('/api/diaries/emotion/{content}')
+def summarize_diary(content: str):
+    response_summary = openai.Completion.create(
         model="text-davinci-002",
-        prompt=f"summary: {diary.content}",
+        prompt=f"Summarize the following text: '{content}'.",
         max_tokens=50,
     )
-    summary = response.choices[0].text.strip()
-    return {'summary': summary}
+    summary = response_summary.choices[0].text.strip()
+
+    response_emotion = openai.Completion.create(
+        model="text-davinci-002",
+        prompt=f"Extract emotion from the following text: '{content}'.",
+        max_tokens=30,
+    )
+
+    emotion = response_emotion.choices[0].text.strip()
+
+    return {'summary': summary, 'emotion': emotion}
 
 @app.get("/api/diaries/picture/{prompt}")
 def make_picture(prompt:str):
@@ -74,10 +99,10 @@ def make_picture(prompt:str):
                     "Please modify the prompt and try again.")
             if artifact.type == generation.ARTIFACT_IMAGE:
                 img = Image.open(io.BytesIO(artifact.binary))
-                img.save(str(artifact.seed)+ ".png") 
-                filename = str(artifact.seed) + ".png"
-
-            #imageUrl = f'http://picaboonftimage.s3.ap-northeast-2.amazonaws.com/{filename}'
-    return FileResponse(filename)
-    # return imageUrl
+                filename = str(uuid.uuid4()) + ".png"
+                filepath = os.path.join('img', filename)
+                img.save(filepath)
+                imageUrl = f'http://picaboonftimage.s3.ap-northeast-2.amazonaws.com/{filename}'
+    # return FileResponse(filename)
+    return imageUrl
 
