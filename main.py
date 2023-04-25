@@ -5,11 +5,13 @@ from dotenv import load_dotenv
 from stability_sdk import client
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import os 
 import boto3
 import logging
 import io
 import openai
+import nltk
 import psycopg2
 import uuid
 import warnings
@@ -25,6 +27,9 @@ openai.api_key= os.getenv('OPENAPI_KEY')
 
 os.environ['STABILITY_HOST'] = 'grpc.stability.ai:443'
 os.environ['STABILITY_KEY'] = os.getenv('STABILITY_KEY')
+
+nltk.download('vader_lexicon')
+sentimentNltk = SentimentIntensityAnalyzer()
 
 #AWS
 def s3_connection():
@@ -79,15 +84,26 @@ def summarize_diary(content: str):
     #)
     #summary = response_summary.choices[0].text.strip()
 
-    response_emotion = openai.Completion.create(
-        model="text-davinci-002",
-        prompt=f"Extract emotion from the following text: '{content}'.",
-        max_tokens=5,
-    )
+    #response_emotion = openai.Completion.create(
+    #    model="text-davinci-002",
+    #    prompt=f"Extract emotion from the following text: '{content}'.",
+    #    max_tokens=5,
+    #)
 
-    emotion = response_emotion.choices[0].text.strip()
-    return {'emotion':emotion}
+    #emotion = response_emotion.choices[0].text.strip()
+    #return {'emotion':emotion}
     #return {'summary': summary, 'emotion': emotion}
+    sentiments = sentimentNltk.polarity_scores(content)
+    emotion = None
+    if sentiments['pos'] > sentiments['neg']:
+        emotion = "happy"
+    elif sentiments['neg'] > sentiments['pos']:
+        emotion = "sad"
+    else:
+        emotion = "neutral"
+    print(sentiments["pos"] + sentiments["neg"])
+    return emotion
+    
 
 @app.get("/api/diaries/picture/{content}")
 def make_picture(content:str):
