@@ -6,12 +6,16 @@ from stability_sdk import client
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from nltk.corpus import sentiwordnet as swn
+from nltk.tokenize import word_tokenize
 import os 
 import boto3
 import logging
 import io
 import openai
 import nltk
+nltk.download('punkt')
+nltk.download('emotion')
 import psycopg2
 import uuid
 import warnings
@@ -28,8 +32,8 @@ openai.api_key= os.getenv('OPENAPI_KEY')
 os.environ['STABILITY_HOST'] = 'grpc.stability.ai:443'
 os.environ['STABILITY_KEY'] = os.getenv('STABILITY_KEY')
 
-nltk.download('vader_lexicon')
-sentimentNltk = SentimentIntensityAnalyzer()
+#nltk.download('vader_lexicon')
+#sentimentNltk = SentimentIntensityAnalyzer()
 
 #AWS
 def s3_connection():
@@ -77,12 +81,12 @@ def root_main():
 
 @app.get('/api/diaries/emotion/{content}')
 def summarize_diary(content: str):
-    #response_summary = openai.Completion.create(
-    #    model="text-davinci-002",
-    #    prompt=f"Summarize the following text: '{content}'.",
-    #    max_tokens=50,
-    #)
-    #summary = response_summary.choices[0].text.strip()
+    response_summary = openai.Completion.create(
+        model="text-davinci-003",
+        prompt=f"Summarize the following text: '{content}'.",
+        max_tokens=50,
+    )
+    summary = response_summary.choices[0].text.strip()
 
     #response_emotion = openai.Completion.create(
     #    model="text-davinci-002",
@@ -93,17 +97,65 @@ def summarize_diary(content: str):
     #emotion = response_emotion.choices[0].text.strip()
     #return {'emotion':emotion}
     #return {'summary': summary, 'emotion': emotion}
-    sentiments = sentimentNltk.polarity_scores(content)
+    # VADER 사전 감정 추출
+    # sentiments = sentimentNltk.polarity_scores(content)
+    #emotion = None
+    #if sentiments['pos'] > sentiments['neg']:
+    #    emotion = "happy"
+    #elif sentiments['neg'] > sentiments['pos']:
+    #    emotion = "sad"
+    #else:
+    #    emotion = "neutral"
+    #print(sentiments["pos"])
+    #return emotion
+    # 감정 카테고리에 대한 단어 정의
+    happy_words = ['happy','great', 'joyful', 'excited', 'delighted']
+    good_words = ['good', 'positive', 'wonderful']
+    neutral_words = ['neutral', 'calm', 'okay']
+    bad_words = ['bad', 'negative', 'unhappy', 'disappointed']
+    confused_words = ['confused', 'bewildered', 'puzzled']
+    angry_words = ['angry', 'frustrated', 'irritated']
+    nervous_words = ['nervous', 'anxious', 'worried']
+    sad_words = ['sad', 'depressed', 'gloomy']
+    sick_words = ['sick', 'unwell', 'ill']
+
+    #일기 내용 토큰화
+    tokens = word_tokenize(summary.lower())
+    # 단어별로 감정 카테고리 확인
     emotion = None
-    if sentiments['pos'] > sentiments['neg']:
-        emotion = "happy"
-    elif sentiments['neg'] > sentiments['pos']:
-        emotion = "sad"
-    else:
+    for token in tokens:
+        if token in happy_words:
+            emotion = "happy"
+            break
+        elif token in good_words:
+            emotion = "good"
+            break
+        elif token in neutral_words:
+            emotion = "neutral"
+            break
+        elif token in bad_words:
+            emotion = "bad"
+            break
+        elif token in confused_words:
+            emotion = "confused"
+            break
+        elif token in angry_words:
+            emotion = "angry"
+            break
+        elif token in nervous_words:
+            emotion = "nervous"
+            break
+        elif token in sad_words:
+            emotion = "sad"
+            break
+        elif token in sick_words:
+            emotion = "sick"
+            break
+    if emotion is None:
         emotion = "neutral"
-    print(sentiments["pos"] + sentiments["neg"])
-    return emotion
     
+    return emotion
+    #return {emotion, summary}
 
 @app.get("/api/diaries/picture/{content}")
 def make_picture(content:str):
