@@ -67,6 +67,10 @@ stability_api = client.StabilityInference(
     engine="stable-diffusion-xl-beta-v2-2-2",
     )
 
+# 이미지 저장할 폴더 경로
+img_folder = 'img'
+# 유지할 이미지 최대 갯수
+max_image_count = 20
 
 class Diary(BaseModel):
     content: str
@@ -109,9 +113,9 @@ def summarize_diary(content: str):
     #print(sentiments["pos"])
     #return emotion
     # 감정 카테고리에 대한 단어 정의
-    happy_words = ['happy','great', 'joyful', 'excited', 'delighted']
+    happy_words = ['happy','great', 'joyful', 'excited', 'delighted','nice']
     good_words = ['good', 'positive', 'wonderful']
-    neutral_words = ['neutral', 'calm', 'okay']
+    neutral_words = ['neutral', 'calm', ]
     bad_words = ['bad', 'negative', 'unhappy', 'disappointed']
     confused_words = ['confused', 'bewildered', 'puzzled']
     angry_words = ['angry', 'frustrated', 'irritated']
@@ -153,7 +157,7 @@ def summarize_diary(content: str):
             break
     if emotion is None:
         emotion = "neutral"
-    
+    print(emotion)
     return emotion
     #return {emotion, summary}
 
@@ -179,12 +183,18 @@ def make_picture(content:str):
             if artifact.type == generation.ARTIFACT_IMAGE:
                 img = Image.open(io.BytesIO(artifact.binary))
                 filename = str(uuid.uuid4()) + ".png"
-                filepath = os.path.join('img', filename)
+                filepath = os.path.join(img_folder, filename)
                 img.save(filepath)
                 try:
                     s3.upload_file(filepath,"picaboodiaryimage",filename)
                 except Exception as e:
                     print(e)
-    
+    # 이미지 개수 확인 로직
+    image_count = len([name for name in os.listdir(img_folder) if os.path.isfile(os.path.join(img_folder, name))])
+    if image_count > max_image_count:
+        # 이미지 파일들을 수정 시간을 기준으로 정렬
+        files = sorted(os.listdir(img_folder), key=lambda x:os.path.join(img_folder, x))
+        os.remove(os.path.join(img_folder, files[0]))
+
     return filename
 
