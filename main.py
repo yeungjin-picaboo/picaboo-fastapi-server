@@ -113,15 +113,15 @@ def summarize_diary(content: str):
     #print(sentiments["pos"])
     #return emotion
     # 감정 카테고리에 대한 단어 정의
-    happy_words = ['happy','great', 'joyful', 'excited', 'delighted','nice']
-    good_words = ['good', 'positive', 'wonderful']
+    happy_words = ['happy','great', 'joyful', 'excited', 'delighted','nice','today is happy']
+    good_words = ['good', 'positive', 'wonderful','today is good']
     neutral_words = ['neutral', 'calm', ]
-    bad_words = ['bad', 'negative', 'unhappy', 'disappointed']
+    bad_words = ['bad', 'negative', 'unhappy', 'disappointed','bad today']
     confused_words = ['confused', 'bewildered', 'puzzled']
-    angry_words = ['angry', 'frustrated', 'irritated']
+    angry_words = ['angry', 'frustrated', 'irritated','very angry']
     nervous_words = ['nervous', 'anxious', 'worried']
-    sad_words = ['sad', 'depressed', 'gloomy']
-    sick_words = ['sick', 'unwell', 'ill']
+    sad_words = ['sad', 'depressed', 'gloomy','die','very sad']
+    sick_words = ['sick', 'unwell', 'ill', 'fever', 'pain','cold', 'very sick']
 
     #일기 내용 토큰화
     tokens = word_tokenize(summary.lower())
