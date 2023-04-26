@@ -91,6 +91,7 @@ def summarize_diary(content: str):
         max_tokens=50,
     )
     summary = response_summary.choices[0].text.strip()
+    print("summary:" + summary)
 
     #response_emotion = openai.Completion.create(
     #    model="text-davinci-002",
@@ -114,7 +115,7 @@ def summarize_diary(content: str):
     #return emotion
     # 감정 카테고리에 대한 단어 정의
     happy_words = ['happy','great', 'joyful', 'excited', 'delighted','nice','today is happy']
-    good_words = ['good', 'positive', 'wonderful','today is good']
+    good_words = ['good', 'positive', 'wonderful','today is good','study good']
     neutral_words = ['neutral', 'calm', ]
     bad_words = ['bad', 'negative', 'unhappy', 'disappointed','bad today']
     confused_words = ['confused', 'bewildered', 'puzzled']
@@ -157,7 +158,7 @@ def summarize_diary(content: str):
             break
     if emotion is None:
         emotion = "neutral"
-    print(emotion)
+    print("emotion : " + emotion)
     return emotion
     #return {emotion, summary}
 
@@ -197,4 +198,3 @@ def make_picture(content:str):
         os.remove(os.path.join(img_folder, files[0]))
 
     return filename
-
