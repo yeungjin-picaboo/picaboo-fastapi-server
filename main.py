@@ -154,10 +154,10 @@ def summarize_diary(content: str):
             emotion = "sad"
             break
         elif token in sick_words:
-            emotion = "sick"
-            break
+             emotion = "sick"
+             break
     if emotion is None:
-        emotion = "neutral"
+         emotion = "neutral"
     print("emotion : " + emotion)
     return emotion
     #return {emotion, summary}
