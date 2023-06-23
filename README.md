@@ -68,7 +68,8 @@ $ cd yeungjin-picaboo
 ```ter
 $ cd picaboo-next-web
 $ npm install
-$ npm run dev
+$ npm run build
+$ npm run start
 ```
 ### Backend(NestJS)
 ```ter
